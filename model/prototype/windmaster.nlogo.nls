@@ -1,0 +1,289 @@
+
+to setup
+  modelInit ; this procedure is called with the model is started for the first time
+  startNewRun ; this procedure prepares a new run by EMA, in a way that the init does not have to be repeated, minimizing file IO, etc
+end
+
+to modelInit
+  clear-all
+  ;python setup
+  py:setup py:python3
+  ;py:run "import dummyTechnicalModel as model"
+  py:run "import windmasterTechnicalModel as model"
+  setGlobalVariables
+  set scenario []
+  
+   
+  ;setupInfraProviders
+  readMarketNames
+  setupMarkets
+  loadInvestmentData
+   
+  setupMap
+  loadAssetData
+  loadLineData  
+  if debug? [
+    testData ; run various checks on data and talk to us about issues you find
+  ]
+  
+  
+  
+end
+
+to startNewRun
+  ;reset the technical model, without reloading the files etc.
+  py:run "model.resetModel()"
+  
+  reset-ticks
+  clear-output
+ 
+  set elapsedYears [] 
+  
+  
+  setYear
+  setupInfraProviders
+  set allMarkets []
+
+  
+  setupMarkets ; here we set the right coordinates
+  
+  set realisedScenarioEvents [] ; we empty the realised events list
+  
+  ;set the convenience variable for decision making model choice
+  if decisionMakingModel = "Reactive" [set decisionMaking 0]
+  if decisionMakingModel = "Current" [set decisionMaking 1]
+  if decisionMakingModel = "Proactive" [set decisionMaking 2]
+  if decisionMakingModel = "Collaborative" [set decisionMaking 3]
+  set considerRuningInvestments? true ;by default we consider running investments
+  
+  ;tell the technical model which decision model we are using, so that we need what the investment buildign tmes are.
+  py:set "decisionMakingModel" decisionMaking
+  
+  set stedinsLostCustomersList [] ; clear stedins lost customers list
+  set investmentHistory [] ; reset the global list of investmens
+  set portsideH2History [] ; reset the H2 imports list
+  
+  
+  debug "Setting debug mode True !"
+  ifelse debug? [
+    py:run "debug = True"
+    set scenario py:runresult "model.getScenario()" 
+    debug (word "The scenario for this run is: " scenario)
+    debug "Settig yearGunvorPhaseout to 2020, yearKochPhaseout to 2021 and yearBPOffline to 2022"
+    ;set yearGunvorPhaseout 2020
+    ;set yearKochPhaseout 2021
+    ;set yearBPOffline 2022
+  
+  ][
+    py:run "debug = False"
+  ]
+  
+  processScenarioEvents ; all forced external events that come from EMA, that are NOT part of the scenario list of events, but are forced individually
+end
+
+
+to setupInfraProviders
+  ; the infrastructure provider agents are created here, specifics first,
+  
+  ;Stedin
+  create-infraProviders 1 [
+    set name "Stedin"
+    set yearlyBudget [3 5 8 11] ; yearly initial budget, based on decision making index
+    set timeHorizon [0 3 10 10] ; stedin is verplicht 10 jaar vooruit te kijken, maar houden rekening mee met 3 jaar, demand expecations, dingen waar ik mee moet, die gaan plaatsvinden als je ze aan kan.
+    set stedin self
+  ]
+  
+  ;TenneT
+  create-infraProviders 1 [
+    set name "TenneT"
+    set yearlyBudget [10 75 150 200]
+    set timeHorizon [0 10 20 20]
+    set tennet self
+  ]
+  
+  ;GTS
+  create-infraProviders 1 [
+    set name "GTS"
+    set yearlyBudget [5 25 150 200]
+    set timeHorizon [0 10 20 20]
+    set gts self
+  ]
+  
+  ;HBR
+  create-infraProviders 1 [
+    set name "HBR"
+    set yearlyBudget  [3 5 8 11]
+    set timeHorizon [0 3 5 10]
+    set hbr self
+  ]
+  
+  ;PZH
+  create-infraProviders 1 [
+    set name "PZH" 
+    set yearlyBudget [3 5 8 11]
+    set timeHorizon [0 4 10 15]
+    set pzh self
+  ]
+  
+  ;collaborative super-infra provider
+  
+  create-infraProviders 1 [
+    set name "Collaborative"
+    
+    let collectiveBudget [item 3 yearlyBudget] of stedin + [item 3 yearlyBudget] of gts + [item 3 yearlyBudget] of tennet ;sum of all infra providers, 
+    set yearlyBudget [411 411 411 ] ; first 3 are not really relevant. just to be consistent
+    set yearlyBudget lput collectiveBudget yearlyBudget  
+    
+    set timeHorizon [20 20 20 20]
+    set collaborativeInfraProvider self
+  ]
+  
+  ;set up the variables that are the same for all
+  ask infraProviders [
+    
+    
+    set shape "person"
+    set label name
+    set label-color black
+    set size 30
+    updateOwnedConversionAssets
+    updateOwnedConnectionLinks
+    
+    set demandExpectations [] ; set the demand to an empty list, so pythn does not choke on a 0
+    
+    set stateOfTheGrid [] ; reset the state of the grid
+    set myInfrastructureInvestments [] ; reset the executed investments list
+    
+    set investmentSetIDs [] ; reset all unique investmetnSetIds
+    set investmentSets [] ; reset one of more discrete Investments that for a solution to the given demand  problem
+    
+    set optionSetIDs []; ;reset Option sets
+    set optionSets [] ; reset a collection of investmentSet options that are equivalent in technically solving the demand problem 
+    
+    set investmentsCurrentlyUnderConstruction [] ; reset what is being constructed
+    
+    set capex_factor 1 
+    
+  ]
+  set activeInfraProviders (turtle-set stedin tennet gts)
+  
+  setInfraProviderLocations
+end
+
+to setInfraProviderLocations
+  let xoffset 600
+  let spacing 100
+  ask stedin [
+    set xcor xoffset 
+    set ycor max-pycor - 20
+  ]
+  
+  ask tennet [
+    set xcor xoffset + spacing 
+    set ycor max-pycor - 20
+    
+  ]
+  
+  ask gts [
+    set xcor xoffset + spacing * 2
+    set ycor max-pycor - 20
+  ]
+  
+  ask hbr [
+    set xcor xoffset + spacing * 3
+    set ycor max-pycor - 20
+  ]
+  
+  ask pzh [
+    set  xcor xoffset + spacing * 4
+    set ycor max-pycor - 20
+  ]
+end
+
+to updateOwnedConversionAssets
+  set ownedConversionAssets conversionAssets with [ assetOwner = [name] of myself ]
+end
+
+to updateOwnedConnectionLinks
+  
+  set ownedConnectionLinks connectionLinks with [ lineOwner = [name] of myself]
+end
+
+
+
+
+to setGlobalVariables
+  ;TODO read from a file !!
+  ;set marketNames ["ElectricitygridTenneT" "Refgasmarket" "Biomassmarket" "Petcokesmarket" "Resfuelmarket" "Electricitymarket" "Coalmarket" "externalcustomersH2" "H2market"  "Ltheatmarket" "externalcustomersLtheat" "Natgasmarket" "Oilrestmarket" "Resfuelmarket" "Wastemarket" "NatgasdemandrestNL" "Natgassupply"]
+  ;readMarketNames
+  
+  set energyCarrierNames ["Coal" "Natgas" "Refgas" "Petcokes" "Resfuel" "Oilrest" "Waste" "Electricity" "Steam" "Htheat" "Ltheat" "H2" ]
+  
+  set labelStatus false
+  set possibleStatusList  ["existing" "considered for construction" "planned for construction" "under construction" "considered for decommissioning" "planned for decommissioning" "under decommissioning"]
+  set xlist[]
+  
+  
+end
+
+to setMarketLocations
+  let xoffset 400
+  let spacing 50
+  let yspacing 50
+  
+  ask allMarkets [
+    set xcor xoffset + (position assetID marketNames) * spacing
+    set ycor max-pycor - 50 - 20 * (  (position assetId marketNames) mod 2)
+  ]
+end
+
+to setupMarkets
+  
+  let xoffset 400
+  let spacing 50
+  let yspacing 50
+  
+  ask conversionAssets [
+      if member? assetID marketNames [
+      set xcor xoffset + (position assetId marketNames) * spacing
+      set ycor max-pycor - 50 - 20 * (  (position assetId marketNames) mod 2)
+      set size 20
+      set shape "building institution"
+      set label-color black
+      set allMarkets (turtle-set allMarkets self)
+    ]
+  ]
+  
+end
+
+to readMarketNames
+  
+  file-close-all ; close all open files
+  set marketNames []
+  
+  if not file-exists? "data/markets.csv" [
+    user-message "No market definition data file 'data/markets.csv' found!"
+    stop
+  ]
+  
+  
+  file-open "data/markets.csv"
+  
+  ; We'll read all the data in a single loop
+  let row 0 ; the row that is currently read
+  while [ not file-at-end? ] [
+    ; here the CSV extension grabs a single line and puts the read data in a list
+    let data (csv:from-row  file-read-line inputFileDelimiter)
+    ;do we have a non-existing asset?
+    ifelse item 0 data != 0 [
+      set marketNames lput item 0 data marketNames
+    ][
+     warning (word "There is an empty row in row: " row" of markets.csv" )
+    ]
+    set row row + 1 ; increment the row counter for the header skip
+    
+  ]; end of while there are rows
+  
+  file-close ; make sure to close the file
+  
+end

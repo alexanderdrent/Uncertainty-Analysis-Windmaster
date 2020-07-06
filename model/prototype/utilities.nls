@@ -1,0 +1,726 @@
+
+to-report reformatedListOfEvents [listoflists]
+  ; this convest a list of lists into a list of strings, so that EMA can parse it easily
+  let reformattedEventList[]
+  foreach listoflists [event -> 
+    ;let y item 3 event 
+    ;let yearString (word y)
+    set reformattedEventList lput (word item 0 event " " item 1 event " " item 2  event " " item 3 event ) reformattedEventList;
+  ]
+
+  report reformattedEventList
+end
+
+to-report sort-with [ key lst ]
+  report sort-by [ [a b] -> (runresult key a) < (runresult key b) ] lst
+end
+
+
+
+to setYear
+  set year 2020 + ticks
+  ;let the tehcnical model know which year it is
+  py:run (word "model.setCurrentYear("year")")
+  
+end
+
+;=======================
+; Convenience functions
+;=======================
+; Warnings can not be supressed, and are presented in the output window
+to warning [string]
+  if provideWarnings? [
+  output-print "=================================="
+  output-print word "Warning ! " string
+  output-print "=================================="
+  ]
+end
+
+; When running in verbose mode, output is generated in the output window, for nonesential infrmation for the user
+to say [string]
+  if verbose? [
+    output-print string
+  ]
+end
+
+;debug is presented in the command output and is used for debug information
+to debug [string]
+  if debug? [
+    print string
+  ]
+end
+
+to testData
+   consistencyChecks
+  
+end
+
+to toggleLabels
+  ifelse labelStatus [
+    ask conversionAssets[ set label humanReadableName]
+    set labelStatus false
+  ]
+  [
+    ask conversionAssets[set label ""]
+    set labelStatus true
+  ]
+end
+
+to loadLineData
+  ;TODO make sure to filter only existing assets, status will be added as column by Ton
+  file-close-all ; close all open files
+  
+  if not file-exists? "data/connectionLinks.csv" [
+    error "No connection assets data file 'data/connectionLinks.csv' found!"
+  ]
+  let connectionsFileHeader 17 ; there are 17 header lines, line 18 is the first data line
+  
+  file-open "data/connectionLinks.csv"
+  ;debug "File open"
+  let row 0 ; the row that is currently read
+  while [ not file-at-end? ] [
+    ; here the CSV extension grabs a single line and puts the read data in a list
+    
+    let data (csv:from-row file-read-line inputFileDelimiter)
+    
+    if connectionsFileHeader <= row  [ ; we are past the header
+      ;debug data
+      let startNodeId item 1 data
+      let endNodeId item 2 data
+      let fromnode  one-of conversionAssets with [assetID = startNodeID]
+      ;debug sentence " fromAsset: " fromnode
+      let tonode one-of conversionAssets with [assetID = endNodeId]
+      ;debug sentence "toAsset: " tonode
+      
+      ifelse fromnode != nobody and tonode != nobody [
+        ask fromnode [         
+          create-connectionLink-to tonode [
+            set color magenta
+            set thickness 3
+            ;lets set all line variables
+            set lineId item 0 data
+            set fromAsset fromnode
+            set toAsset tonode
+            set feedstock item 3 data
+            set maxCapacity item 4 data
+            set lineOwner  item 5 data
+            set lineCapex item 6 data
+            
+            if feedstock = "Electricity" [set color White]
+            if feedstock = "H2" [set color Blue]
+            if feedstock = "Natgas" [set color  Yellow]
+            if feedstock = "Coal" [set color Brown]
+            if feedstock = "Steam" [set color Green]
+            if feedstock = "LTheat" [set color Orange]
+            if feedstock = "HTheat" [set color Red]
+            
+            say (sentence "Link with ID: " lineID " created from " fromnode "to" tonode)
+          ];end create links      
+        ];ask from asset
+      ]; nodes exist
+      [
+        let message (sentence "No connectionLink in row" (row + 1) " exists with ID: ")
+        if fromnode = nobody [set message sentence message startNodeID ]
+        if tonode = nobody [set message (sentence message "ID:" endNodeId)]
+        set message sentence message " Links must be defined from single point to single point and must have unique IDs!"
+        warning message
+        
+      ]; nodes do not exist
+    ];end if past the header
+    
+    set row row + 1
+  ];end while there are linesto read
+  file-close ; make sure to close the file
+end
+
+to loadAssetData
+  
+  file-close-all ; close all open files
+  
+  
+  if not file-exists? "data/conversionAssets.csv" [
+    error "No conversion assets data file 'data/conversionAssets.csv' found!"
+  ]
+  let assetsFileHeader 18 ; there are 18 header lines, line 19 is the first data line
+  
+  file-open "data/conversionAssets.csv"
+    
+  ; need to skip the first 18 rows
+  ; We'll read all the data in a single loop
+  let row 0 ; the row that is currently read
+  while [ not file-at-end? ] [
+    ; here the CSV extension grabs a single line and puts the read data in a list
+    let data (csv:from-row  file-read-line inputFileDelimiter)
+    
+    ; check if the row is empty or not
+    if assetsFileHeader <= row  [ ; we are past the header
+      ifelse item 0 data = 0 [ 
+        warning (word "Found empty row at " (row + 1) " skipping agent creation")
+      ]
+      [
+        ;do we have a non-existing asset?
+        if  item 3 data = "existing"[
+          ; now we can use the current data row to create a conversion asset
+          createConversionAssetFromData row data  
+        ]; end if status not existing 
+      ]; end if empty row
+      
+    ];end past header
+    
+    set row row + 1 ; increment the row counter for the header skip
+    
+  ]; end of while there are rows
+  
+  file-close ; make sure to close the file
+end
+
+to loadInvestmentData
+  set investmentData []
+  set investmentIdList []
+  file-close-all ; close all open files
+  
+  
+  if not file-exists? "data/investIDwindmaster.csv" [
+    error "No conversion assets data file 'data/investIDwindmaster.csv' found!"
+  ]
+  let investmentFileHeader 1 ; there are 18 header lines, line 19 is the first data line
+  
+  file-open "data/investIDwindmaster.csv"
+    
+  ; need to skip the first 18 rows
+  ; We'll read all the data in a single loop
+  let row 0 ; the row that is currently read
+  while [ not file-at-end? ] [
+    ; here the CSV extension grabs a single line and puts the read data in a list
+    let data (csv:from-row  file-read-line inputFileDelimiter)
+    
+    ; check if the row is empty or not
+    if investmentFileHeader <= row  [ ; we are past the header
+      set investmentData lput data investmentData
+      set investmentIdList lput item 0 data investmentIdList
+              
+    ];end past header
+    
+    set row row + 1 ; increment the row counter for the header skip
+  ]
+  file-close ; make sure to close the file
+end
+
+
+to createConversionAssetFromData [row data]
+  create-conversionAssets 1 [
+    set size 20
+    set shape "factory"
+    set label-color blue
+    set dataRow (row + 1)
+    say (word  "making an asset from data in row: " dataRow  ". The raw data read from the file are :")
+    say data
+    
+    ;  ; Variables from the conversion assets data file
+    ;  clusterID ;  Site's location within industrial cluster ["MV_A", "MV_B", "EUR_A","EUR_B","EUR_C","BOT_A","BOT_B","PER"]
+    set clusterID item 0 data
+    say sentence "clusterID: " clusterID
+    
+    ;  siteID ;  "Site ID [String, no spaces] – must be unique"
+    set siteID item 1 data
+    say sentence "siteID: " siteID
+    
+    ;  assetID ; "Conversion asset ID [string, without spaces] – Must be unique"
+    set assetID item 2 data
+    say sentence "assetID: " assetID
+    
+    
+    ;  status ; "Asset status (existing/   considered for construction/ planned for construction/ under construction / considered for decommissioning/planned for decommissioning/under decommissioning"
+    set status  item 3 data
+    say sentence "assetID: " assetID
+    ; hide all but the existing turtles, for the visualisation
+    ifelse  member? status possibleStatusList [
+      if status != "existing" [hide-turtle]
+    ][
+      warning (sentence "entry in row " (row + 1 ) " does not have a valid status. De value in the data file is = " status)
+    ]
+    
+    ;  alternativeFor ;"Alternative for  asset (asset ID/UNDEF/0) IF 0 than completely new asset on site"
+    set alternativeFor item 4 data
+    say sentence "alternativeFor: " alternativeFor
+    
+    
+    ;  periodConsideredForConstruction ;"Period option can be considered for construction (start year:end year)"
+    set periodConsideredForConstruction convertToNumberList item 5 data  
+    say sentence "periodConsideredForConstruction: " periodConsideredForConstruction
+    
+    
+    ;  durationOfConstruction;  duration of construction, once started, year
+    set durationOfConstruction item 7 data
+    say sentence "periodConsideredForConstruction: " periodConsideredForConstruction
+    
+    
+    ;  periodConsideredForDecomisioning ;  Period option can be considered for disinvestment (start year:end year)
+    set periodConsideredForDecomisioning convertToNumberList item 8 data
+    say sentence "periodConsideredForDecomisioning: " periodConsideredForDecomisioning
+    
+    
+    ;  durationOfDecomissioning ;  Duraction of decomissioning, [years]
+    set durationOfDecomissioning item 9 data
+    say sentence "durationOfDecomissioning: " durationOfDecomissioning
+    
+    
+    ;  xlocation ;  X (center of site) ESRI coordinates
+    ;debug (sentence "Loading Xcor from row : " (row + 1 ))
+    set xlocation item 10 data
+    set xmap  convertxcor xlocation ; turn the esri cordinate data into turtle xcor
+        
+    ifelse xmap > max-pxcor OR  xmap < 0 [
+      warning (word name  "has x coordinate outside the map")
+      set xcor 100
+      set xmap xcor
+      say (word name " has converted xcor: " xcor)
+    ][
+      set xcor xmap
+    ]
+    
+    
+    ;  ylocation ;  Y (center of site)
+    set ylocation  item 11 data
+    set ymap convertycor ylocation
+    
+    ifelse ymap > max-pycor OR  ymap < 0 [
+      ;debug (sentence "ymap" ymap " max-pycor " max-pycor)
+      warning sentence name  "has y coordinate outside the map"
+      set ycor 100
+      set ymap ycor
+    say (word name " has converted ycor: " ycor)
+    ][
+      set  ycor ymap
+    ]
+    
+    ; label ;  "Asset description –  human readable form – [String, no commas]"
+    set humanReadableName item 12 data
+    set label humanReadableName
+    say sentence "Human readable label: " label
+    
+    
+    ;  owner ;  "Owner – must be unique {String]"
+    set assetOwner item 13 data
+    say sentence "owner: " assetOwner
+    
+    
+    ;  feedstocks ;  "Feedstocks  of conversion assets– list of product names
+    set feedstocks convertToStringList item 14 data
+    say sentence "feedstocks: " feedstocks
+    
+    
+    ;  feedstockAmounts ; How many MW of feedstock enters the conversion asset, list in same order as feedstock energy carrier names
+    set feedstockAmounts convertToNumberList item 15 data
+    say sentence "feedstockAmounts: " feedstockAmounts
+    
+    
+    ;  conversionEfficiencyToElectricity ;  "Conversion efficiency to electricity [fraction], a list of numbers separated by : in the same order as the feedstocks field"
+    set conversionEfficiencyToElectricity convertToNumberList item 16 data
+    say sentence "conversionEfficiencyToElectricity: " conversionEfficiencyToElectricity
+    
+    
+    ;  conversionEfficiencyToSteam ;  "Conversion efficiency to steam [fraction], , a list of numbers separated by : in the same order as the feedstocks field"
+    set conversionEfficiencyToSteam convertToNumberList item 17 data
+    say sentence "conversionEfficiencyToSteam: " conversionEfficiencyToSteam
+    
+    
+    ;  conversionEfficiencyToHTheat ;  "Conversion efficiency to HT heat [fraction], , a list of numbers separated by : in the same order as the feedstocks field"
+    set conversionEfficiencyToHTheat convertToNumberList item 18 data
+    say sentence "conversionEfficiencyToHTheat: " conversionEfficiencyToHTheat
+    
+    
+    ;  conversionEfficiencyToLTheat ;  "Conversion efficiency to LT heat [fraction], , a list of numbers separated by : in the same order as the feedstocks field"
+    set conversionEfficiencyToLTheat convertToNumberList item 19 data
+    say sentence "conversionEfficiencyToLTheat: " conversionEfficiencyToLTheat
+    
+    
+    ;  conversionEfficiencyToH2;  "Conversion efficiency to H2 [fraction], , a list of numbers separated by : in the same order as the feedstocks field"
+    set conversionEfficiencyToH2 convertToNumberList item 20 data
+    say sentence "conversionEfficiencyToH2: " conversionEfficiencyToH2
+    
+    
+    ;Conversion efficiency to Natgas [fraction], , a list of numbers separated by : in the same order as the feedstocks field
+    set conversionEfficiencyToNatgas convertToNumberList item 21 data
+    say sentence "conversionEfficiencyToNatgas: " conversionEfficiencyToNatgas
+    
+    
+    ;  utilization ; "Utilization @ max. capacity [fraction of time], of conversion asset"
+    set utilization item 22 data
+    say sentence "utilization: " utilization
+    
+    
+    ;  CO2EmissionFactor ;  "CO2 emission factor of conversion asset [list of factors per feedstock type], 
+    set CO2EmissionFactor convertToNumberList item 23 data
+    say sentence "CO2EmissionFactor: " CO2EmissionFactor
+    
+    
+    ;  linesToAsset ;  Incoming lines to this conversion asset, list of unique lineIDs separated by :" NULL if none
+    set linesFromAsset convertToStringList item 24 data
+    say sentence "linesFromAsset: " linesFromAsset
+    
+    
+    ;  linesFromAsset; Outoging lines from conversion asset, list of unique lineIDs names, separated by :, NULL if none
+    set linesToAsset convertToStringList item 25 data
+    say sentence "linesToAsset: " linesToAsset
+    
+    
+    ;  capex ;"CAPEX (UNDEF / cost)"
+    set assetCapex item 26 data
+    say sentence "capex: " assetCapex
+    
+    
+    set name (word "conversionAsset " label " with id " assetID " from row " dataRow)
+    say sentence "Completed making an conversionAsset : " name
+  ]
+end
+
+
+
+to setupMap
+  ; MAP, ideal if we can get an export from https://portofrotterdam.maps.arcgis.com/apps/webappviewer/index.html?id=19a593c767cc4142a4ef07ac3fa7fbd8
+  ; top left coordinate : 56,860.510 445,939.605 Meters
+  ; bottom right : 91,353.779 431,207.576 Meters
+  ; filling the screen
+  
+  ;Using map from screenshot 
+  ;enter max-pxcor and max-pycor into the world settings, qith value -1, as we count from 0
+  ;topleft coordinates
+  set topleftx 57140.593
+  set toplefty 446569.337
+  ;bottomright coordinates
+  set bottomrightx 92319.663 
+  set bottomrighty 430365.105
+  
+  import-pcolors "data/haven.png" ; we map the image 1:1 on the world, 
+  
+end
+
+
+to testMap 
+  file-close-all ; close all open files
+  file-open "data/assetLocations.csv" 
+  
+  while [ not file-at-end? ] [
+    ; here the CSV extension grabs a single line and puts the read data in a list
+    let data csv:from-row file-read-line
+    if verbose?[
+    ]
+    create-conversionAssets 1 [
+      set size 15
+      set color red
+      set shape "factory"
+      setxy convertxcor item 2 data   convertycor item 3 data
+      set label item 1 data
+      set label-color black
+    ]
+  ]
+  
+  
+  
+end
+to-report convertxcor [x]
+  
+  ifelse is-number? x  
+  [
+    let lengthx bottomrightx - topleftx ; length of the map in coordinate units
+    let deltax x - topleftx  ; xdistance from edge on the x, in cordinate units
+    
+    report max-pxcor * (deltax / lengthx)
+  ]
+  [
+    ;debug (word name " has a a non-number x coordinate: x coordinate set to 100")
+    report 100]
+end
+
+to-report convertycor [y]
+  ifelse is-number? y [
+    let lengthy toplefty - bottomrighty
+    let deltay y - bottomrighty
+    report max-pycor * (deltay / lengthy)
+  ]
+  [
+    ;debug (word name " has a a non-number y coordinate: y coordinate set to 100")
+    report 100
+  ]
+end
+
+to-report convertToStringList [string] ; procedure uses : to split a string a make list elements
+  let dataAsList [] ; an empty list to return
+                    ; test string "Electricity:Steam:Htheatfurnace:Ltheat:Hydrogen"
+  
+  while [length string > 0] [
+    let stringLength length string
+    let pos position ":" string
+    
+    ifelse pos = false [ ; if there is no : present, then the string is the list element
+      set dataAsList lput  string dataAsList
+      set string ""
+    ]
+    [
+      let x substring string 0 pos ; from the beginning of the string up to the position of :, not including the :
+      set dataAsList lput  x dataAsList
+      set string substring string (pos + 1) stringLength
+    ]
+  ]
+  
+  report dataAsList
+end
+
+
+to-report convertToNumberList [input]
+  let numList [] ; empty number list for storing output
+  if is-number? input [
+    set numlist lput input numlist  
+  ]
+  
+  if is-string? input [
+    ; if the input is a string, then we pass it to the string coverter to get a list of string
+    let stringlist convertToStringList input 
+    
+    if member? "UNDEF" stringlist = false ; in the string is UNDEF, in that case we leave the list empty
+    [
+      set numlist map read-from-string stringlist
+    ]
+  ]
+  report numlist
+end
+
+
+
+
+to consistencyChecks
+  
+  ; do we have unknown feedstocks loaded
+  
+  say "Performing feedstock  names check"
+  ask conversionAssets [
+    ifelse feedstocks = 0 [
+      if member? "market" name = false [
+      warning word name " has no feedstocks, only has outputs,  and does not appear to be a market"
+      ]
+    ][
+      foreach feedstocks [ input ->
+        if member? input energyCarrierNames = false [
+          warning (word name " has a unknown energy carrier: " input)
+        ]
+      ]
+    ]
+  ]
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  
+  ;are all IDs unique?
+  say "Performing ID uniqueness check"
+  let allIDs [assetID] of conversionAssets
+  let noDuplicates remove-duplicates allIDs
+  let duplicateIDs allIDs ; will be used to reduce the list
+  
+  
+  if length noDuplicates != length allIDs
+  [
+    
+    
+    foreach noDuplicates [ currentId ->
+      let pos  position currentId duplicateIDs ; identify the index of the *first* occurence of the assetID 
+      set duplicateIDs remove-item pos duplicateIDs ; remove the item
+    ]
+    warning word "Duplicate conversionAsset IDs present : " duplicateIDs 
+  ]
+  ;;;;;;;;;;;;;;;;;;;;
+  
+  
+  ;the energy ballances over conversionAssets can not be OK, as we do not count the losses ( total efficiency < 1)
+  ; for sonversionAssets that have an output we check if the output is not > input, otehrs are final demaind nodes, and are sinks
+  say "Performing energy ballance sanity of assets that have outputs"
+  ask conversionAssets [
+    if conversionEfficiencyToElectricity = 0 OR conversionEfficiencyToSteam = 0 OR conversionEfficiencyToHTheat = 0 OR conversionEfficiencyToLTheat = 0 or conversionEfficiencyToH2 = 0 or conversionEfficiencyTonatgas = 0 [
+      if member? "market" name = false [
+      warning word name " has one or more conversion efficiencies undefined, and does not seem to be a market"
+      ]
+      stop ; exit the ask, no point in checking furher
+    ]
+    
+    ifelse length conversionEfficiencyToElectricity = 0 OR length conversionEfficiencyToSteam = 0 OR length conversionEfficiencyToHTheat = 0 OR length conversionEfficiencyToLTheat = 0 or length conversionEfficiencyToH2 = 0 or length conversionEfficiencyTonatgas = 0 [
+      warning sentence name " has empty conversionEfficiency data fields"
+    ][
+      if reduce + conversionEfficiencyToElectricity + reduce + conversionEfficiencyToSteam + reduce + conversionEfficiencyToHTheat + reduce + conversionEfficiencyToLTheat + reduce + conversionEfficiencyToH2 != 0 [ ; we have an assets that has at least one conversion
+                                                                                                                                                                                                                      ;say sentence name " is a normal conversion asset"
+        
+        ifelse length feedstocks != length feedstockAmounts [
+          warning (sentence name " does not have the same number of input feedstocks and input amounts")
+        ]
+        [ 
+          let in totalEnergyInput self
+          let out totalEnergyOutput self
+          if  in < out [
+            warning word name " has energy ballance wrong, more output than input"
+            say sentence "in: " in
+            say sentence "out: " out
+            say sentence "delta" (in - out)
+          ]
+        ] ; end same number of feedstocks and feedstockAmounts
+      ]; end asset has outputs
+      
+      
+      ;identify final demand assets, i.e assets that have no outputs
+      say "Performing energy ballance sanity of assets that have outputs"
+      
+      if reduce + conversionEfficiencyToElectricity + reduce + conversionEfficiencyToSteam + reduce + conversionEfficiencyToHTheat + reduce + conversionEfficiencyToLTheat + reduce + conversionEfficiencyToH2 = 0  + reduce + conversionEfficiencyTonatgas = 0 [ ; we have an assets that has no outputs
+        if (member? "Demand" label OR member? "demand" label OR member? "Grid" label OR member? "grid" label) = false[
+          warning sentence name "has no outputs . It also has no word 'Demand','demand','grid' or 'Grid'  in its name. Are you sure this is a final demand? Infra nodes (substaitons, pumping stations etc should have conversion efficiency 1 for the energy carrier they have."
+        ]
+      ] 
+      
+    ]; end if no empty efficiency data fields 
+  ]
+  ;;;;;;;;;;;;;;;;;;;
+  
+  
+end
+
+
+to-report totalEnergyInput [ asset ]
+  report reduce + [feedstockAmounts] of asset
+end
+
+to-report totalEnergyOutput [ asset ]
+  let totalElectricity 0
+  ifelse length conversionEfficiencyToElectricity != 0 AND length conversionEfficiencyToElectricity = length feedstockAmounts [
+    set totalElectricity reduce + (map * feedstockAmounts conversionEfficiencyToElectricity)
+  ]
+  [
+    warning (sentence [label] of asset " has unequal feedstock and conversion efficiency to Electricity lists")
+  ]  
+  
+  ;debug [label] of asset
+  ;debug sentence "totalElectricity= " totalElectricity
+  
+  
+  let totalSteam 0
+  ifelse length conversionEfficiencyToSteam != 0 AND length conversionEfficiencyToSteam = length feedstockAmounts [
+    set totalSteam reduce + (map * feedstockAmounts conversionEfficiencyToSteam)
+  ]
+  [
+    warning (sentence [label] of asset " has unequal feedstock and conversion efficiency to Steam lists")
+  ]
+  ;debug sentence "totalSteam= " totalSteam
+  
+  let totalHTheat 0
+  ifelse length conversionEfficiencyToHTheat != 0 AND length conversionEfficiencyToHTheat = length feedstockAmounts [
+    set totalHTheat reduce + (map * feedstockAmounts conversionEfficiencyToHTheat)
+  ]
+  [
+    warning (sentence [label] of asset " has unequal feedstock and conversion efficiency to HT heat lists")
+  ]
+  ;debug sentence "totalHTheat= "totalHTheat 
+  
+  let totalLTheat 0
+  ifelse length conversionEfficiencyToLTheat != 0 AND length conversionEfficiencyToLTheat = length feedstockAmounts [
+    set totalLTheat reduce + (map * feedstockAmounts conversionEfficiencyToLTheat)
+  ]
+  [
+    warning (sentence [label] of asset " has unequal feedstock and conversion efficiency to LT heat lists")
+  ]
+  
+  ;debug sentence "totalLTheat= " totalLTheat
+  
+  let totalH2 0
+  ifelse length conversionEfficiencyToH2 != 0 AND length conversionEfficiencyToH2 = length feedstockAmounts[
+    set totalH2 reduce + (map * feedstockAmounts conversionEfficiencyToH2)
+  ]
+  [
+    warning (sentence [label] of asset " has unequal feedstock and conversion efficiency to H@ lists")
+  ]
+  
+  ;debug sentence  "totalH2= " totalH2
+  
+  report totalElectricity + totalSteam + totalHTheat + totalLTheat + totalH2
+  
+end
+
+to mapView
+  setupMap
+  ;TODO make sure we reset markets and owners correctly
+;  ask conversionAssets[ 
+;    facexy xmap ymap
+;    set size 15
+;  ]
+;  
+;  repeat 1000 [    
+;    ask conversionAssets[ if distance patch xmap ymap > 10 [fd 5]]
+;      ]
+;  
+  ask conversionAssets [
+    set xcor xmap
+    set ycor ymap
+  ]
+  
+  setMarketLocations
+  setInfraProviderLocations
+  
+  
+end
+
+
+to graphView
+  clear-patches
+  ask conversionAssets [set size 5]
+  ;ask allMarkets [set size 15]
+  repeat 1000 [
+    layout-spring turtles links 0.2 80 100 
+    setInfraProviderLocations
+  ]
+  
+end
+
+to centerNetworkOnElectricityGrid
+  ask conversionAssets [set size 5]
+  ask  conversionAssets with [assetID = "ElectricitygridTenneT"] [set size 20]
+  layout-radial conversionAssets connectionLinks turtle ([who] of one-of conversionAssets with [assetID = "ElectricitygridTenneT"]) 
+  
+end
+
+to centerNetworkOnSelectedAsset
+  clear-patches
+  layout-radial conversionAssets connectionLinks selectedAsset
+  
+end
+
+to selectAsset
+  if mouse-down? [
+    let candidate min-one-of conversionAssets [distancexy mouse-xcor mouse-ycor]
+    set selectedAsset candidate
+    ;debug [name] of selectedAsset
+    watch selectedAsset
+    display
+  ]
+  
+end
+
+
+
+to-report totalFinalDemandPerCarrier [carrier]
+  let totalDemand 0
+  ask conversionAssets [
+    ifelse length conversionEfficiencyToElectricity != 0 AND length conversionEfficiencyToSteam != 0 AND length conversionEfficiencyToHTheat != 0 AND length conversionEfficiencyToLTheat != 0 AND length conversionEfficiencyToH2 != 0 [ ; we have correctly formated agent
+      if reduce + conversionEfficiencyToElectricity + reduce + conversionEfficiencyToSteam + reduce + conversionEfficiencyToHTheat + reduce + conversionEfficiencyToLTheat + reduce + conversionEfficiencyToH2 = 0 [ ; we have an assets that has no outputs
+        
+        ifelse length feedstockAmounts != 0 AND member? carrier feedstocks[          
+          
+          set totalDemand totalDemand + ( item (position carrier feedstocks) feedstockAmounts ) ; from the position where the feedstock name is, take the MW value from feedstockAmounts
+                                                                                                ;debug (word name " is counted for final demand which is now: " totalDemand)
+        ][
+          ;warning word name "has no feedstock ammounts defined!"
+        ] 
+      ]
+    ][ ; elsewe have a asset with undefined conversion efficiencies
+       ;warning (word name " has a 0-length conversionEfficiency." )
+    ]
+  ]
+  
+  report totalDemand
+end
+
+to-report totalFinalDemand
+  report (totalFinalDemandPerCarrier "Electricity" +  totalFinalDemandPerCarrier "Coal" + totalFinalDemandPerCarrier "Natgas" + totalFinalDemandPerCarrier "Refgas" + totalFinalDemandPerCarrier "Petcokes" + totalFinalDemandPerCarrier "Resfuel" + totalFinalDemandPerCarrier "Oilrest" + totalFinalDemandPerCarrier "Waste" + totalFinalDemandPerCarrier  "Electricity" + totalFinalDemandPerCarrier "Steam" + totalFinalDemandPerCarrier "Htheat" + totalFinalDemandPerCarrier "Ltheat"  + totalFinalDemandPerCarrier"H2" )
+end

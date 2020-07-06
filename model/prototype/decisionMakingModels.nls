@@ -1,0 +1,638 @@
+;This is called by the go function
+
+; we receive from technical model investments structured as : optionSet ( option (investmentSet (investment)))
+; option set -> the discrete investmnets that need to be made
+; option -> a collection of investment alternatives  that are available for this investment
+; investmentSet -> an alternative is a set of investment that consists of 1 or more investmentIDs
+
+
+; Budget regels
+;Dan zou ik de volgende CAPEX-budgetten hanteren (zijn mijn inschattingen en niet afgestemd met TenneT, GTS (wel gevraagd, nog geen antwoord op gekregen)):
+; 
+;Jaarlijkse CAPEX-budgetten voor oplossen transportbottlenecks:
+;Stedin:
+;Reactief: 3 Meuro/jaar. Dit budget is beschikbaar aan het begin van het jaar en wordt altijd opgemaakt. Dus elk jaar is 3 Meuro beschikbaar (en niet meer, sparen doen we niet).
+;Huidig: 5 Meuro/jaar nieuw budget. En de spaaroptie zoals je die voorzien hebt
+;Proactief: 8 Meuro/jaar nieuw budget. En de spaaroptie zoals je die voorzien hebt
+;Collaboratief: 11 Meuro/jaar. En de spaaroptie zoals je die voorzien hebt.
+; 
+; 
+;TenneT:
+;Reactief: 50 Meuro/jaar. Dit budget is beschikbaar aan het begin van het jaar en wordt altijd opgemaakt. Dus elk jaar is 50 Meuro beschikbaar (en niet meer, sparen doen we niet).
+;Huidig: 100 Meuro/jaar. En de spaaroptie zoals je die voorzien hebt
+;Proactief: 150 Meuro/jaar nieuw budget. En de spaaroptie zoals je die voorzien hebt
+;Collaboratief: 200 Meuro/jaar. En de spaaroptie zoals je die voorzien hebt.
+; 
+;GTS:
+;Reactief: 50 Meuro/jaar. Dit budget is beschikbaar aan het begin van het jaar en wordt altijd opgemaakt. Dus elk jaar is 50 Meuro beschikbaar (en niet meer, sparen doen we niet).
+;Huidig: 100 Meuro/jaar. En de spaaroptie zoals je die voorzien hebt
+;Proactief: 150 Meuro/jaar nieuw budget. En de spaaroptie zoals je die voorzien hebt
+;Collaboratief: 200 Meuro/jaar. En de spaaroptie zoals je die voorzien hebt.
+;
+
+
+to reactiveDecisionMakingModel
+  ; investments are made only for events within a very short time horizon,
+  ; for each investmentSet, 
+  ;   the investment option  with smallest overcapacity is made, and only if we stay within the existing budget
+  ;   if a part of the investment set falls outside budget, the is not made. we can thus have patial investments
+  ; PZH & HBR do not act at all.
+  
+  
+  
+  ask activeInfraProviders [
+    debug ".............."
+    debug (word name " is starting reactive decision making." )
+    
+    ; how much money do we have for this year ?
+    ; Just a fixed same budget
+    set budget item decisionMaking yearlyBudget ; grab the 0th value from the budget list, reset yearly, no saving
+    
+    determineDemandExpectations
+    determineNecessaryInvestments
+    
+    ;neededInvestmentsWithinExpectedDemand
+    ;[investmentID, owner,  year that asset will become overloaded given current events that I can see,   MW additional capacity that the investment generates,  MEUR CAPEX, year when it will be finished]
+    
+    ;if there are no investments that I need to make, exit.
+    if length neededInvestmentsWithinExpectedDemand = 0 [
+      debug (word name " has no investment to make")
+      stop
+    ]
+    
+    sortNeededInvestments
+    
+    while [length optionSetIDs > 0] [ 
+      ;Identify the investment option and investment set with the lowest MW overcapacity
+      let lowestMW 99999999999 ; a very large number, +infinity
+      let lowestMwInvestmentSetId -1
+      let lowestMwOptionId -1
+      
+      ;select the investment option set and within it, the investment  set that has the lowest overcapacity
+      foreach optionSetIDs [ optionSetID ->
+        foreach investmentSetIDs [ investmentSetID ->
+          let investments filter [investment ->  (item 5 investment) = investmentSetID AND (item 6 investment) = optionSetID] neededInvestmentsWithinExpectedDemand
+          debug (word name " is doing identification of lowest MWs loop. InvestmentID is " investmentSetId " and setId is " optionSetID " and we found " length investments " investment")
+          if length investments > 0 [
+            let mwsum 0
+            foreach investments [investment ->
+              set mwsum mwsum + item 2  investment  
+            ]
+            if mwsum < lowestMW   [
+              set lowestMW mwsum
+              set lowestMwInvestmentSetId investmentSetID
+              set lowestMwOptionId optionSetID
+              debug (word name " is doing identification of lowest MWs loop. WE FOUND A LOWEST setID  " lowestMwInvestmentSetId " and optionId is " lowestMwOptionId " and MW is " lowestMW )
+            ]
+          ] ; end if we have investments with this combination
+        ]; end inv set
+        
+      ]; end option
+      
+      debug (word name  " has lowest lowest MW: " lowestMW " for lowestMwInvestmentSetId " lowestMwInvestmentSetId " for lowestMwOptionId " lowestMwOptionId)
+      
+      ;get those investments from the list of needed investments 
+      let investmentsToDo filter [investment -> item 5 investment = lowestMwInvestmentSetId AND item 6 investment = lowestMwOptionId ] neededInvestmentsWithinExpectedDemand
+      
+      ;now we know the investment set and within it, the investment option that has the lowes MW excess. Invest in that investmentSet
+      foreach investmentsToDo [ investment ->
+        let cost item 3 investment
+        if budget > cost [ ; if we can afford it
+          makeInfrastructureInvestment investment  ; make the investment in the physical model
+          debug (word name " has budget " budget " and has made the investment " investment " that costs " item 3 investment )
+          set budget budget - cost  ; pay the CAPEX
+        ]
+      ]
+      
+      ; now we have made (or failed to make) all investments,  remove all investments that have the same optionSetID, and proceed to the next set
+      let investmentsToRemove filter [investment -> (item 6 investment) = lowestMwOptionId ] neededInvestmentsWithinExpectedDemand
+      debug (word name " will remove these investments as they are done, even if they failed due to lack of money " investmentsToRemove)
+      foreach investmentsToRemove [ investment ->
+        set neededInvestmentsWithinExpectedDemand remove investment neededInvestmentsWithinExpectedDemand
+      ]
+      
+      sortNeededInvestments ; resort the investment, with the now absent ptionSetId that we just dealt with
+      
+    ]; we processed all option sets
+  ] ; end ask active agents
+  
+end
+
+to currentDecisionMakingModel
+
+  ; Tons narrtive van de huidige beslissmaking
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ; ik moet over 4 jaar beslissen om dit knelpunt op te lossen
+  ; doel is knelpunten tijding oplossen
+  ; je wet waneer elke investring klaar is
+  
+  ; ik prioritiseer de investering die de erst volgende knelpunt event kunnen oplossen  ( op tijd klaar zijn), gezien dat ik geld heb
+  ; als er geen investeringen zijn die de eerstvolgende knelput kunne oplossen,
+  ; dan pak ik de volgende knelput op, die ik wel kan opossen. <- dit is voor de proactieve
+  ; as die er ook niet zijn , dan bewaar ik mijn geld voor volgend jaar
+  
+  ; Als ik een investering zou kunnen maken op tijd voor de eerst volgende knelpunt, maar ik heb geen geld
+  ;  kan ik door een jaar langer te wachten, zodat ik mischien meer geld heb , de investering nog op tijd afhebben?
+  ; zo ja, bewaar al je geld voor volgend jaar,
+  ;zo nee, dan probeer ik alles opnieuw voor de daaropvolgende knelpunt investering <- voor the proactief
+  ;
+  
+  ;choose the  investment that has highest overcapacity and is affordable within the budget, per infra provider
+  ;hier is wel prioritisering over tijd ook een dig, om maximaal aantal investering aan te kunnen binnen mijn horizont.
+  
+  ; bij gas. altijd de segment proberen vrij te spelen door gebruikers over te zetten.
+  ;todo check met Ton
+  ;GTS Always considr Wijgaarde H2
+  
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;
+  
+  ; om dit te kunnen doen, met elke investering worden gerelateerd aan specifieke events. Op dit moment kan dat niet, omdat de 
+  ; de benodigde investringen worden gegeven voor alle events binnen ons tijdshorizont.
+  
+  ; Nu geimplementeerd iets wat er op lijkt.
+  ; ik heb een langere tijds horizon dan reactive
+  ; doel is zo snel mogelijk investeringen te doen
+  
+  ; ik prioritiseer de optieSets die als eerste klaar zijn , gezien de verwachte demand
+  ;   Binnen de optieSet, kies ik de investeerings set, die als groep als eerste klaar is.
+  ;   daar invester ik in als ik het hele inestringsSet kan betalen.
+  ; daarna ga ik door naar de volgende optieSet
+  ;   als ik de investeringsSet niet kan betalen, stop ik er mee, en wacht ik tot volgend jaar, waneer ik meer geld heb
+  
+  ;;;;;;;;;;;;;;;;
+  
+  ask activeInfraProviders [
+    debug ".............."
+    debug (word name " is starting current decision making." )
+
+    
+    ; how much money do we have for this year ?
+    set budget budget + item decisionMaking yearlyBudget ; we save up fro last year, and add the yearly budget income
+    
+    determineDemandExpectations
+    determineNecessaryInvestments
+    
+    ;neededInvestmentsWithinExpectedDemand
+    ;[investmentID, owner,  year that asset will become overloaded given current events that I can see,   MW additional capacity that the investment generates,  MEUR CAPEX, year when it will be finished]
+    
+    ;if there are no investments that I need to make, exit.
+    if length neededInvestmentsWithinExpectedDemand = 0 [
+      debug (word name " has no investment to make")
+      stop
+    ]
+    
+    sortNeededInvestments
+    
+    while [length optionSetIDs > 0] [ 
+      ;Identify the investment option and investment set with the lowest MW overcapacity
+      let earliestYearOfCompletion 99999999999 ; a very large number, +infinity
+      let earliestYearOfCompletionInvestmentSetId -1
+      let earliestYearOfCompletionOptionId -1
+      
+      ;select the investment option set and within it, the investment  set that has the lowest overcapacity
+      foreach optionSetIDs [ optionSetID ->
+        foreach investmentSetIDs [ investmentSetID ->
+          let investments filter [investment ->  (item 5 investment) = investmentSetID AND (item 6 investment) = optionSetID] neededInvestmentsWithinExpectedDemand
+          debug (word name " is doing identification of earliest year of competion loop. InvestmentID is " investmentSetId " and setId is " optionSetID " and we found " length investments " investment")
+          if length investments > 0 [ ; If there is this combination of OptionSet and InvestmentSet
+            let latestYear 0
+            foreach investments [investment -> ;because we might have multiple discrete investments that form  single coherent investment, we must take the latest year of this set
+              let thisCompletionYear item 4  investment  
+              if thisCompletionYear > latestYear [
+                set latestYear thisCompletionYear           
+              ]
+            ]
+            if latestYear < earliestYearOfCompletion   [
+              set earliestYearOfCompletion latestYear
+              set earliestYearOfCompletionInvestmentSetId investmentSetID
+              set earliestYearOfCompletionOptionId optionSetID
+              debug (word name " is doing identification of earliest year of completion loop. WE FOUND A EARLIEST setID" earliestYearOfCompletionInvestmentSetId " and optionId is " earliestYearOfCompletionOptionId " and year is " earliestYearOfCompletion )
+            ]
+          ] ; end if we have investments with this combination
+        ]; end inv set
+        
+      ]; end option
+      
+      debug (word name  " has earliest completion year: " earliestYearOfCompletion " for earliestYearOfCompletionInvestmentSetId " earliestYearOfCompletionInvestmentSetId " for earliestYearOfCompletionOptionId " earliestYearOfCompletionOptionId)
+      
+      ;get those investments from the list of needed investments 
+      let investmentsToDo filter [investment -> item 5 investment = earliestYearOfCompletionInvestmentSetId AND item 6 investment = earliestYearOfCompletionOptionId ] neededInvestmentsWithinExpectedDemand
+      
+      ;now we know the investment set and within it, the investment option that has the earliest date f completion. Determine total nvestment costs
+      
+      let cost 0
+      foreach investmentsToDo [ investment ->
+        let costThisInvestment item 3 investment
+        set cost cost + costThisInvestment
+      ]
+      
+      
+      ifelse budget > cost [ ; if we can afford it
+        
+        foreach investmentsToDo [ investment ->
+          makeInfrastructureInvestment investment  ; make the investment in the physical model
+          debug (word name " has budget " budget " and has made the investment " investment " that costs " item 3 investment )
+          set budget budget - cost  ; pay the CAPEX
+        ]
+        
+        
+        ; now we have made all separate investments that will provice a complete earlies investment, remove all investments that have the same optionSetID, and proceed to the next set
+        let investmentsToRemove filter [investment -> (item 6 investment) = earliestYearOfCompletionOptionId ] neededInvestmentsWithinExpectedDemand
+        debug (word name " will remove these investments as their optionSet is complete : " investmentsToRemove)
+        foreach investmentsToRemove [ investment ->
+          set neededInvestmentsWithinExpectedDemand remove investment neededInvestmentsWithinExpectedDemand
+        ]
+        
+        sortNeededInvestments ; resort the investment, with the now absent ptionSetId that we just dealt with
+        
+      ]; we processed all option sets
+      [
+        debug (word name " has insufficient budget and will stop for this year")
+        stop
+      ]; we do not have enough money, this infra provider is done acting.
+    ]; end option set
+  ] ; end ask active agents
+  
+  
+end
+
+to proactiveDecisionMakingModel
+  
+  
+  ; ik moet over 4 jaar beslissen om dit knelpunt op te lossen
+  ; doel is knelpunten tijding oplossen
+  ; je wet waneer elke investring klaar is
+  
+  ; ik prioritiseer de investering die de erst volgende knelpunt event kunnen oplossen  ( op tijd klaar zijn), gezien dat ik geld heb
+  ; als er geen investeringen zijn die de eerstvolgende knelput kunne oplossen,
+  ; dan pak ik de volgende knelput op, die ik wel kan opossen. <- dit is voor de proactieve
+  ; as die er ook niet zijn , dan bewaar ik mijn geld voor volgend jaar
+  
+  ; Als ik een investering zou kunnen maken op tijd voor de eerst volgende knelpunt, maar ik heb geen geld
+  ;  kan ik door een jaar langer te wachten, zodat ik mischien meer geld heb , de investering nog op tijd afhebben?
+  ; zo ja, bewaar al je geld voor volgend jaar,
+  ;zo nee, dan probeer ik alles opnieuw voor de daaropvolgende knelpunt investering <- voor the proactief
+  ;
+  
+  ;choose the  investment that has highest overcapacity and is affordable within the budget, per infra provider
+  ;hier is wel prioritisering over tijd ook een dig, om maximaal aantal investering aan te kunnen binnen mijn horizont.
+  
+  ; bij gas. altijd de segment proberen vrij te spelen door gebruikers over te zetten.
+  ;todo check met Ton
+  ;GTS Always considr Wijgaarde H2
+  
+  ;;;;;;;;;;;;;;;;;;;;;
+  ; implemented :
+  ; choose for each investment set, prioritise set and the  investment option that has highest overcapacity and is affordable within the budget
+  ; if that one is not available, choose the next one that is affordable, and so on. if nothing is affordable at the moment, keep the money
+  ; and try again next year.
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;
+  
+  
+  ask activeInfraProviders [
+    debug ".............."
+    debug (word name " is starting proactive decision making." )
+
+    ; how much money do we have for this year ?
+    set budget budget + item decisionMaking yearlyBudget ; we save up fro last year, and add the yearly budget income
+    
+    determineDemandExpectations
+    determineNecessaryInvestments
+    
+    ;neededInvestmentsWithinExpectedDemand
+    ;[investmentID, owner,  year that asset will become overloaded given current events that I can see,   MW additional capacity that the investment generates,  MEUR CAPEX, year when it will be finished]
+    
+    ;if there are no investments that I need to make, exit.
+    if length neededInvestmentsWithinExpectedDemand = 0 [
+      debug (word name " has no investment to make")
+      stop
+    ]
+    
+    sortNeededInvestments
+    
+    while [length optionSetIDs > 0] [ 
+      ;Identify the investment option and investment set with the highest MW overcapacity
+      let largestMwOvercapacity -99999999999 ; a very large number, -infinity
+      let largestMwOvercapacityInvestmentSetId -1
+      let largestMwOvercapacityOptionId -1
+      
+      ;select the investment option set and within it, the investment  set that has the lowest overcapacity
+      foreach optionSetIDs [ optionSetID ->
+        foreach investmentSetIDs [ investmentSetID ->
+          let investments filter [investment ->  (item 5 investment) = investmentSetID AND (item 6 investment) = optionSetID] neededInvestmentsWithinExpectedDemand
+          debug (word name " is doing identification of highest MW overcapacity of competion loop. InvestmentID is " investmentSetId " and setId is " optionSetID " and we found " length investments " investment")
+          if length investments > 0 [ ; If there is this combination of OptionSet and InvestmentSet
+            let investmentMW 0
+            foreach investments [investment -> ;because we might have multiple discrete investments that form  single coherent investment, we must take the latest year of this set
+              set investmentMW investmentMW + item 2  investment  ; sum up the total overcapacity of this inveestmentSet
+            ]
+            if investmentMW > largestMwOvercapacity   [
+              set largestMwOvercapacity investmentMW
+              set largestMwOvercapacityInvestmentSetId investmentSetID
+              set largestMwOvercapacityOptionId optionSetID
+              debug (word name " is doing identification of largest MW Overcapacity of completion loop. WE FOUND A HIGHEST.  setID" largestMwOvercapacityInvestmentSetId " and optionId is " largestMwOvercapacityOptionId " and MW capacity is " largestMwOvercapacity )
+            ]
+          ] ; end if we have investments with this combination
+        ]; end inv set
+        
+      ]; end option
+      
+      debug (word name  " has highest MW overcapacity: " largestMwOvercapacity " for largestMwOvercapacityInvestmentSetId " largestMwOvercapacityInvestmentSetId " for largestMwOvercapacityOptionId " largestMwOvercapacityOptionId)
+      
+      ;get those investments from the list of needed investments 
+      let investmentsToDo filter [investment -> item 5 investment = largestMwOvercapacityInvestmentSetId AND item 6 investment = largestMwOvercapacityOptionId ] neededInvestmentsWithinExpectedDemand
+      
+      ;now we know the investment set and within it, the investment option that has the highest MW overcapacity. Determine total investment costs
+      
+      let cost 0
+      foreach investmentsToDo [ investment ->
+        ;debug (word name " has item 3 investment: " item 3 investment)
+        let costThisInvestment item 3 investment
+        set cost cost + costThisInvestment
+      ]
+      
+      
+      ifelse budget > cost [ ; if we can afford it
+        
+        foreach investmentsToDo [ investment ->
+          makeInfrastructureInvestment investment  ; make the investment in the physical model
+          debug (word name " has budget " budget " and has made the investment " investment " that costs " item 3 investment )
+          set budget budget - cost  ; pay the CAPEX
+        ]
+        
+        
+        ; now we have made all separate investments that will provide a maximum MW overcapacity, remove all investments that have the same optionSetID, and proceed to the next set
+        let investmentsToRemove filter [investment -> (item 6 investment) = largestMwOvercapacityOptionId ] neededInvestmentsWithinExpectedDemand
+        debug (word name " will remove these investments as their optionSet is complete : " investmentsToRemove)
+        foreach investmentsToRemove [ investment ->
+          set neededInvestmentsWithinExpectedDemand remove investment neededInvestmentsWithinExpectedDemand
+        ]
+        
+        sortNeededInvestments ; resort the investment, with the now absent otionSetId that we just dealt with
+        
+      ]; end can we afford it
+      [
+        debug (word name " has insufficient budget and will stop for this year")
+        stop
+      ]; we do not have enough money, this infra provider is done acting.
+    ]; end option set
+  ] ; end ask active agents
+  
+  
+  
+end
+
+to collaborativeDecisionMakingModel
+  
+  
+  ;collaborative decision making
+  ;  there is only one infra provider, whose horizon is as long as the longest one available between them all. 
+  ; its budget is a sum of all available budgets
+  ; it sees all investment opportunities,
+  ; and prioritizes the investments that have the highest MW overcapacity, and invest as long as there is money available
+  
+  
+  
+  ask collaborativeInfraProvider [
+    debug ".............."
+    debug (word name " is starting collaborative decision making." )
+
+    set budget budget + item decisionMaking yearlyBudget ; we save up fro last year, and add the yearly budget income
+    determineDemandExpectations
+    
+    ; below we do not use the determineNecessaryInvestments, as it returns only investments that fit the name
+    py:set "demandExpectations" demandExpectations
+    debug demandExpectations
+    set neededInvestmentsWithinExpectedDemand py:runresult (word "model.getNeededInfrastructureInvestmentsIfTheseEventsHappen(demandExpectations)") ; all needed investments
+    
+    if considerRuningInvestments? [ ; exclude those that are under construction
+    
+    debug (word name " had the following  investments under construction until this year: " investmentsCurrentlyUnderConstruction)
+    ;todo remove all investments that are finished this year, i.e. keep everythin whose end year is not this year.
+    set investmentsCurrentlyUnderConstruction filter [investment -> item 4 investment >= year] investmentsCurrentlyUnderConstruction 
+    debug (word name " has the following  investments under construction now: " investmentsCurrentlyUnderConstruction)
+      
+      ;the list of things to ignore
+      foreach investmentsCurrentlyUnderConstruction [ underConstructionInvestment -> ; check every current investment
+                                                                                     ; if its ID occurs in the needed investments, remove that investment
+        let constID item 0 underConstructionInvestment
+        ; we set the needed investments to be the  the needed investments filtered for all investments that do not have a under construction ID. So all that is not the thing being built now
+        set  neededInvestmentsWithinExpectedDemand filter [neededInvestment -> item 0 neededInvestment != constID ] neededInvestmentsWithinExpectedDemand
+      ]
+    debug (word name " will consider these needed investments, as they are not already under construction : " neededInvestmentsWithinExpectedDemand)
+    ]
+ 
+    
+    ;if there are no investments that I need to make, exit.
+    if length neededInvestmentsWithinExpectedDemand = 0 [
+      debug (word name " has no investment to make")
+      stop
+    ]
+    
+    sortNeededInvestments
+    
+    while [length optionSetIDs > 0] [ 
+      ;Identify the investment option and investment set with the highest MW overcapacity
+      let largestMwOvercapacity -99999999999 ; a very large number, -infinity
+      let largestMwOvercapacityInvestmentSetId -1
+      let largestMwOvercapacityOptionId -1
+      
+      ;select the investment option set and within it, the investment  set that has the lowest overcapacity
+      foreach optionSetIDs [ optionSetID ->
+        foreach investmentSetIDs [ investmentSetID ->
+          let investments filter [investment ->  (item 5 investment) = investmentSetID AND (item 6 investment) = optionSetID] neededInvestmentsWithinExpectedDemand
+          debug (word name " is doing identification of highest MW overcapacity of competion loop. InvestmentID is " investmentSetId " and setId is " optionSetID " and we found " length investments " investment")
+          if length investments > 0 [ ; If there is this combination of OptionSet and InvestmentSet
+            let investmentMW 0
+            foreach investments [investment -> ;because we might have multiple discrete investments that form  single coherent investment, we must take the latest year of this set
+              set investmentMW investmentMW + item 2  investment  ; sum up the total overcapacity of this inveestmentSet
+            ]
+            if investmentMW > largestMwOvercapacity   [
+              set largestMwOvercapacity investmentMW
+              set largestMwOvercapacityInvestmentSetId investmentSetID
+              set largestMwOvercapacityOptionId optionSetID
+              debug (word name " is doing identification of largest MW Overcapacity of completion loop. WE FOUND A HIGHEST.  setID" largestMwOvercapacityInvestmentSetId " and optionId is " largestMwOvercapacityOptionId " and MW capacity is " largestMwOvercapacity )
+            ]
+          ] ; end if we have investments with this combination
+        ]; end inv set
+        
+      ]; end option
+      
+      debug (word name  " has highest MW overcapacity: " largestMwOvercapacity " for largestMwOvercapacityInvestmentSetId " largestMwOvercapacityInvestmentSetId " for largestMwOvercapacityOptionId " largestMwOvercapacityOptionId)
+      
+      ;get those investments from the list of needed investments 
+      let investmentsToDo filter [investment -> item 5 investment = largestMwOvercapacityInvestmentSetId AND item 6 investment = largestMwOvercapacityOptionId ] neededInvestmentsWithinExpectedDemand
+      
+      ;now we know the investment set and within it, the investment option that has the highest MW overcapacity. Determine total investment costs
+      
+      let cost 0
+      foreach investmentsToDo [ investment ->
+        debug (word name " has item 3 investment: " item 3 investment)
+        let costThisInvestment  item 3 investment
+        set cost cost + costThisInvestment
+      ]
+      
+      
+      ifelse budget > cost [ ; if we can afford it
+        
+        foreach investmentsToDo [ investment ->
+          makeInfrastructureInvestment investment  ; make the investment in the physical model
+          debug (word name " has budget " budget " and has made the investment " investment " that costs " item 3 investment )
+          set budget budget - cost  ; pay the CAPEX
+        ]
+        
+        
+        ; now we have made all separate investments that will provide a maximum MW overcapacity, remove all investments that have the same optionSetID, and proceed to the next set
+        let investmentsToRemove filter [investment -> (item 6 investment) = largestMwOvercapacityOptionId ] neededInvestmentsWithinExpectedDemand
+        debug (word name " will remove these investments as their optionSet is complete : " investmentsToRemove)
+        foreach investmentsToRemove [ investment ->
+          set neededInvestmentsWithinExpectedDemand remove investment neededInvestmentsWithinExpectedDemand
+        ]
+        
+        sortNeededInvestments ; resort the investment, with the now absent otionSetId that we just dealt with
+        
+      ]; end can we afford it
+      [
+        debug (word name " has insufficient budget and will stop for this year")
+        stop
+      ]; we do not have enough money, this infra provider is done acting.
+    ]; end option set
+    
+    
+    
+    
+  ]
+  
+end
+
+
+
+
+to determineNecessaryInvestments
+  ; returns : [[investmentID, owner name, MW additional overcapacity that the investment generates,  MEUR CAPEX, year when it will be finished, amount, investmentSetId, investmentAlernativeId ] [...] [...] ]
+  	;investmentSetId is a uniqe ID that all alternatives for this investment have
+   	;investmentAlernativeId a unique identifier of a group of alternative equivalen investment groups
+  
+  debug (Word name " is determining necessary investments for demandExpectation :" demandExpectations)
+  
+  py:set "demandExpectations" demandExpectations
+  
+  let allNeededInvestmentsWithinExpectedDemand[]
+  
+  ;WACTH OUT below is the dummy expected investment
+  ;set allNeededInvestmentsWithinExpectedDemand py:runresult (word "model.dummyGetNeededInfrastructureInvestmentsIfTheseEventsHappen(demandExpectations)") ; all needed investments
+    
+  set allNeededInvestmentsWithinExpectedDemand py:runresult (word "model.getNeededInfrastructureInvestmentsIfTheseEventsHappen(demandExpectations)") ; all needed investments
+  
+
+  
+  
+  ; [investmentID, owner,  MW additional capacity that the investment generates,  MEUR CAPEX, year when it will be finished]
+  ifelse length allNeededInvestmentsWithinExpectedDemand != 0 [
+    set neededInvestmentsWithinExpectedDemand filter [ investment ->  item 1 investment = name ] allNeededInvestmentsWithinExpectedDemand ; all neede investments that concern my assets
+    let neededInvestmentsWithinExpectedDemand_manip_capex_leadtime []
+    foreach neededInvestmentsWithinExpectedDemand  [ investment  ->
+                                                    ; alter the CAPEX of this investment by multiplying it by defined capex_factor (default: 1)
+                                                      set investment replace-item 3 investment (item 3 investment * capex_factor) 
+                                                    ; alter the year of finish of this investment by (1) calculating lead time, (2) multiply by leadtime_factor (default: 1) and (3) add the rounded value to current year
+                                                      set investment replace-item 4 investment ( year + round(leadtime_factor * (item 4 investment - year) ) )
+                                                      set neededInvestmentsWithinExpectedDemand_manip_capex_leadtime lput investment neededInvestmentsWithinExpectedDemand_manip_capex_leadtime
+                                                    ]
+  
+    set neededInvestmentsWithinExpectedDemand neededInvestmentsWithinExpectedDemand_manip_capex_leadtime
+    if shuffle-needed-investments?   [ set neededInvestmentsWithinExpectedDemand shuffle neededInvestmentsWithinExpectedDemand ]
+    debug (word name " has recieved the following needed investments " neededInvestmentsWithinExpectedDemand)
+  ][
+    set neededInvestmentsWithinExpectedDemand [] 
+  ]
+  
+  if considerRuningInvestments? [ ; exclude those that are under construction
+    
+    
+    debug (word name " had the following  investments under construction until this year: " investmentsCurrentlyUnderConstruction)
+    ;todo remove all investments that are finished in the previous year, i.e. keep everythin whose end year is this year
+    set investmentsCurrentlyUnderConstruction filter [investment -> item 4 investment >= year] investmentsCurrentlyUnderConstruction 
+    debug (word name " has the following  investments under construction now: " investmentsCurrentlyUnderConstruction)
+      
+      ;the list of things to ignore
+      foreach investmentsCurrentlyUnderConstruction [ underConstructionInvestment -> ; check every current investment
+                                                                                     ; if its ID occurs in the needed investments, remove that investment
+        let constID item 0 underConstructionInvestment
+        ; we set the needed investments to be the  the needed investments filtered for all investments that do not have a under construction ID. So all that is not the thing being built now
+        set  neededInvestmentsWithinExpectedDemand filter [neededInvestment -> item 0 neededInvestment != constID ] neededInvestmentsWithinExpectedDemand
+      ]
+    debug (word name " will consider these needed investments, as they are not already under construction : " neededInvestmentsWithinExpectedDemand)
+    ]
+ 
+  
+end
+
+to determineDemandExpectations
+  ;which years are we aware of?
+  let knownYears (list year)  ; we always know what happens this year, so start with current year
+  set knownYears sentence knownYears n-values (item decisionMaking timeHorizon)  [y -> (year + 1) + y]
+  ;show knownYears
+  
+  ;get all events from scenario that happen for known years
+  set demandExpectations []
+  foreach knownYears [ y ->
+    let eventsThisYear filter [event -> item 3 event = y] scenario
+    set demandExpectations sentence demandExpectations eventsThisYear
+  ]
+  ;show demandExpectations
+end
+
+
+to makeInfrastructureInvestment [investment]
+  
+  py:set "makeThisInvestment" investment
+  
+  if py:runresult (word "model.makeInfrastructureInvestment(makeThisInvestment)") = false [
+    error (word "Something went wrong when making infrastrcuture investment " item 0 investment " in the technical model! We should never get a false back in this function!") 
+  ]
+  debug (word "Investment made ! " name " made the investment: " investment) 
+  
+  set investmentsCurrentlyUnderConstruction lput investment investmentsCurrentlyUnderConstruction
+  
+  ;investmentHistory ; a global list, in which investor and the actual investment are recorded
+  set investment lput name investment ; add the name of the actual investor to the end of the investment list
+  set investment lput year investment ; add the name of the actual investor to the end of the investment list
+  set investmentHistory lput investment investmentHistory ; put it in the overall list of investment
+  
+  
+end
+
+
+to sortNeededInvestments
+  
+  set investmentSetIDs [] ; All unique investmetnSetIds
+  set investmentSets [] ; one of more discrete Investments that for a solution to the given demand  problem
+  
+  set optionSetIDs []; 
+  set optionSets [] ; a collection of investmentSet options that are equivalent in technically solving the demand problem 
+  
+  foreach neededInvestmentsWithinExpectedDemand [ investment ->
+    set investmentSetIDs lput item 5 investment investmentSetIDs
+    set optionSetIDs lput item 6 investment optionSetIDs
+  ]
+  set investmentSetIDs remove-duplicates investmentSetIDs ; now we have a list of unique investmentSetIDs, so we can group them later
+  
+  set optionSetIDs remove-duplicates optionSetIDs ; get unique optionSetIDs
+  
+  
+  ; create a list of investment sets, with each element is a list of investments sharing the same investmentSetID
+  foreach investmentSetIDs [isd ->
+    set investmentSets lput filter [investment -> (item 5 investment) = isd] neededInvestmentsWithinExpectedDemand investmentSets 
+    
+  ]
+  
+  foreach optionSetIDs [osid ->
+    set optionSets lput filter [osset -> (item 6 (item 0 osset)) = osid ] investmentSets optionSets
+  ]
+  
+  debug (word name " has " length optionSets " optionSets, with ids: "optionSetIDs " and they are " optionSets )
+  debug (word name " has "length investmentSets " investmentSets. Their IDs are " investmentSetIDs " They are : " investmentSets)
+  
+  
+  
+end

@@ -1,0 +1,14 @@
+"Boiler","Hybrid",2020
+"Boiler","HybridH2",NULL
+"Boiler","Electricity",2020
+"Boiler","H2",NULL
+"Furnace","Hybrid",2030
+"Furnace","HybridH2",2030
+"Furnace","Electricity",2030
+"Furnace","H2",NULL
+"Cogen","Hybrid",2020
+"Cogen","HybridH2",NULL
+"Cogen","Electricity",2020
+"Cogen","H2",NULL
+"Smr","SMR_CCS",NULL
+"Smr","Electrolysis_H2O",NULL

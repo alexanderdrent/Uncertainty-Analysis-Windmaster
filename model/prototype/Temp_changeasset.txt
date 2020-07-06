@@ -1,0 +1,325 @@
+if 'C1' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D1': {'demand/production': electricity_grid.node['D1']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C1'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D1': {'demand/production': electricity_grid.node['D1']['demand/production'] + items[4] }})
+        if 'C2' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D3': {'demand/production': electricity_grid.node['D3']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C2'].iloc[0][15]) }})
+            else:
+               nx.set_node_attributes(electricity_grid, {'D3': {'demand/production': electricity_grid.node['D3']['demand/production'] + items[4]  }}) 
+        if 'C10' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D4': {'demand/production': electricity_grid.node['D4']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C10'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D4': {'demand/production': electricity_grid.node['D4']['demand/production'] + items[4] }})
+        if 'C11' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D4': {'demand/production': electricity_grid.node['D4']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C11'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D4': {'demand/production': electricity_grid.node['D4']['demand/production'] + items[4] }})
+        if 'C12' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D4': {'demand/production': electricity_grid.node['D4']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C12'].iloc[0][15]) }})
+        if 'C7' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D4': {'demand/production': electricity_grid.node['D4']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C7'].iloc[0][15]) }})
+            else:
+                 nx.set_node_attributes(electricity_grid, {'D4': {'demand/production': electricity_grid.node['D4']['demand/production'] + items[4] }})
+        if 'C8' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D4': {'demand/production': electricity_grid.node['D4']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C8'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D4': {'demand/production': electricity_grid.node['D4']['demand/production'] + items[4]}})
+        if 'C9' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D4': {'demand/production': electricity_grid.node['D4']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C11'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D4': {'demand/production': electricity_grid.node['D4']['demand/production'] + items[4] }})
+        if 'C14' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D5': {'demand/production': electricity_grid.node['D5']['demand/production'] + ((int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C14'].iloc[0][15]) + items[4]) /(0.49*0.85)) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D5': {'demand/production': electricity_grid.node['D5']['demand/production'] + items[4] }})
+        if 'C16' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D6': {'demand/production': electricity_grid.node['D6']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C16'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D6': {'demand/production': electricity_grid.node['D6']['demand/production'] + items[4] + items[4] }})
+        if 'C15' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D6': {'demand/production': electricity_grid.node['D6']['demand/production'] + ((int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C15'].iloc[0][15]) + items[4]) /(0.49*0.85)) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D6': {'demand/production': electricity_grid.node['D6']['demand/production'] + items[4] + items[4] }})
+        if 'C20' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D7': {'demand/production': electricity_grid.node['D7']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C20'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D7': {'demand/production': electricity_grid.node['D7']['demand/production'] + items[4] + items[4] }})
+        if 'C21' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D7': {'demand/production': electricity_grid.node['D7']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C21'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D7': {'demand/production': electricity_grid.node['D7']['demand/production'] + items[4] + items[4] }})
+        if 'C22' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D7': {'demand/production': electricity_grid.node['D7']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C22'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D7': {'demand/production': electricity_grid.node['D7']['demand/production'] + items[4] + items[4] }})
+        if 'C17' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D7': {'demand/production': electricity_grid.node['D7']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C17'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D7': {'demand/production': electricity_grid.node['D7']['demand/production'] + items[4] + items[4] }})
+        if 'C18' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D7': {'demand/production': electricity_grid.node['D7']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C18'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D7': {'demand/production': electricity_grid.node['D7']['demand/production'] + items[4] + items[4] }})
+        if 'C19' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D7': {'demand/production': electricity_grid.node['D7']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C19'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D7': {'demand/production': electricity_grid.node['D7']['demand/production'] + items[4] + items[4] }})
+        if 'C23' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D8': {'demand/production': electricity_grid.node['D8']['demand/production'] + ((int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C23'].iloc[0][15]) + items[4]) /(0.49*0.85)) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D8': {'demand/production': electricity_grid.node['D8']['demand/production'] + items[4] + items[4] }})
+        if 'C24' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D9': {'demand/production': electricity_grid.node['D9']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C24'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D9': {'demand/production': electricity_grid.node['D9']['demand/production'] + items[4] + items[4] }})
+        if 'C25' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D10': {'demand/production': electricity_grid.node['D10']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C25'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D10': {'demand/production': electricity_grid.node['D10']['demand/production'] + items[4] + items[4] }})
+        if 'C27' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D11': {'demand/production': electricity_grid.node['D11']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C27'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D11': {'demand/production': electricity_grid.node['D11']['demand/production'] + items[4] + items[4] }})
+        if 'C26' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D11': {'demand/production': electricity_grid.node['D11']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C26'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D11': {'demand/production': electricity_grid.node['D11']['demand/production'] + items[4] + items[4] }})
+        if 'C28' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D12': {'demand/production': electricity_grid.node['D12']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C28'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D12': {'demand/production': electricity_grid.node['D12']['demand/production'] + items[4] + items[4] }})
+        if 'C25' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D10': {'demand/production': electricity_grid.node['D10']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C25'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D10': {'demand/production': electricity_grid.node['D10']['demand/production'] + items[4] + items[4] }})
+        if 'C29' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D13': {'demand/production': electricity_grid.node['D13']['demand/production'] + ((int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C29'].iloc[0][15]) + items[4]) /(0.49*0.85)) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D13': {'demand/production': electricity_grid.node['D13']['demand/production'] + items[4] + items[4] }})
+        if 'C30' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D13': {'demand/production': electricity_grid.node['D13']['demand/production'] + ((int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C30'].iloc[0][15]) + items[4]) /(0.49*0.85)) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D13': {'demand/production': electricity_grid.node['D13']['demand/production'] + items[4] + items[4] }})
+        if 'C36' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D13': {'demand/production': electricity_grid.node['D13']['demand/production'] + ((int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C36'].iloc[0][15]) + items[4]) /(0.49*0.85)) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D13': {'demand/production': electricity_grid.node['D13']['demand/production'] + items[4] + items[4] }})
+        if 'C33' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D14': {'demand/production': electricity_grid.node['D14']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C33'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D14': {'demand/production': electricity_grid.node['D14']['demand/production'] + items[4] + items[4] }})
+        if 'C34' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D17': {'demand/production': electricity_grid.node['D17']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C34'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D17': {'demand/production': electricity_grid.node['D17']['demand/production'] + items[4] + items[4] }})
+        if 'C35' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D18': {'demand/production': electricity_grid.node['D18']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C35'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D18': {'demand/production': electricity_grid.node['D18']['demand/production'] + items[4] + items[4] }})
+        if 'C33' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D14': {'demand/production': electricity_grid.node['D14']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C33'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D14': {'demand/production': electricity_grid.node['D14']['demand/production'] + items[4] + items[4] }})
+        if 'C37' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D19': {'demand/production': electricity_grid.node['D19']['demand/production'] + ((int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C37'].iloc[0][15]) + items[4]) /(0.49*0.85)) }})  
+            else:
+                nx.set_node_attributes(electricity_grid, {'D19': {'demand/production': electricity_grid.node['D19']['demand/production'] + items[4] + items[4] }})
+        if 'C39' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D21': {'demand/production': electricity_grid.node['D21']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C39'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D21': {'demand/production': electricity_grid.node['D21']['demand/production'] + items[4] + items[4] }})
+        if 'C41' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D22': {'demand/production': electricity_grid.node['D22']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C41'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D22': {'demand/production': electricity_grid.node['D22']['demand/production'] + items[4] + items[4] }})
+        if 'C42' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D22': {'demand/production': electricity_grid.node['D22']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C42'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D22': {'demand/production': electricity_grid.node['D22']['demand/production'] + items[4] + items[4] }})
+        if 'C43' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D23': {'demand/production': electricity_grid.node['D23']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C43'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D23': {'demand/production': electricity_grid.node['D23']['demand/production'] + items[4] + items[4] }})
+        if 'C45' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D24': {'demand/production': electricity_grid.node['D24']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C45'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D24': {'demand/production': electricity_grid.node['D24']['demand/production'] + items[4] + items[4] }})
+        if 'C44' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D24': {'demand/production': electricity_grid.node['D24']['demand/production'] + ((int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C44'].iloc[0][15]) + items[4]) /(0.49*0.85)) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D24': {'demand/production': electricity_grid.node['D24']['demand/production'] + items[4] + items[4] }})
+        if 'C47' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D25': {'demand/production': electricity_grid.node['D25']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C47'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D25': {'demand/production': electricity_grid.node['D25']['demand/production'] + items[4] + items[4] }})
+        if 'C50' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D26': {'demand/production': electricity_grid.node['D26']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C50'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D26': {'demand/production': electricity_grid.node['D26']['demand/production'] + items[4] + items[4] }})
+        if 'C51' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D26': {'demand/production': electricity_grid.node['D26']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C51'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D26': {'demand/production': electricity_grid.node['D26']['demand/production'] + items[4] + items[4] }})
+        if 'C51' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D26': {'demand/production': electricity_grid.node['D26']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C51'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D26': {'demand/production': electricity_grid.node['D26']['demand/production'] + items[4] + items[4] }})
+        if 'C52' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D26': {'demand/production': electricity_grid.node['D26']['demand/production'] + ((int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C52'].iloc[0][15]) + items[4]) /(0.49*0.85)) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D26': {'demand/production': electricity_grid.node['D26']['demand/production'] + items[4] + items[4] }})
+        if 'C53' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D27': {'demand/production': electricity_grid.node['D27']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C53'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D27': {'demand/production': electricity_grid.node['D27']['demand/production'] + items[4] + items[4] }})
+        if 'C54' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D28': {'demand/production': electricity_grid.node['D28']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C54'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D28': {'demand/production': electricity_grid.node['D28']['demand/production'] + items[4] + items[4] }})
+        if 'C55' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D28': {'demand/production': electricity_grid.node['D28']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C55'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D28': {'demand/production': electricity_grid.node['D28']['demand/production'] + items[4] + items[4] }})
+        if 'C56' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D29': {'demand/production': electricity_grid.node['D29']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C56'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D29': {'demand/production': electricity_grid.node['D29']['demand/production'] + items[4] + items[4] }})
+        if 'C57' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D30': {'demand/production': electricity_grid.node['D30']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C57'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D30': {'demand/production': electricity_grid.node['D30']['demand/production'] + items[4] + items[4] }})
+        if 'C58' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D31': {'demand/production': electricity_grid.node['D31']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C58'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D31': {'demand/production': electricity_grid.node['D31']['demand/production'] + items[4] + items[4] }})
+        if 'C59' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D32': {'demand/production': electricity_grid.node['D32']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C59'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D32': {'demand/production': electricity_grid.node['D32']['demand/production'] + items[4] + items[4] }})
+        if 'C69' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D33': {'demand/production': electricity_grid.node['D33']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C69'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D33': {'demand/production': electricity_grid.node['D33']['demand/production'] + items[4] + items[4] }})
+        if 'C70' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D33': {'demand/production': electricity_grid.node['D33']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C70'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D33': {'demand/production': electricity_grid.node['D33']['demand/production'] + items[4] + items[4] }})
+        if 'C71' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D33': {'demand/production': electricity_grid.node['D33']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C71'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D33': {'demand/production': electricity_grid.node['D33']['demand/production'] + items[4] + items[4] }})
+        if 'C72' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D33': {'demand/production': electricity_grid.node['D33']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C72'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D33': {'demand/production': electricity_grid.node['D33']['demand/production'] + items[4] + items[4] }})
+        if 'C73' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D33': {'demand/production': electricity_grid.node['D33']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C73'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D33': {'demand/production': electricity_grid.node['D33']['demand/production'] + items[4] + items[4] }})
+        if 'C74' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D33': {'demand/production': electricity_grid.node['D33']['demand/production'] + items[4] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C74'].iloc[0][15]) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D33': {'demand/production': electricity_grid.node['D33']['demand/production'] + items[4] + items[4] }})
+        if 'C63' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D33': {'demand/production': electricity_grid.node['D33']['demand/production'] + ((int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C63'].iloc[0][15]) + items[4]) /(0.62*0.85)) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D33': {'demand/production': electricity_grid.node['D33']['demand/production'] + items[4] + items[4] }})
+        if 'C64' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'D33': {'demand/production': electricity_grid.node['D33']['demand/production'] + ((int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C64'].iloc[0][15]) + items[4]) /(0.62*0.85)) }})
+            else:
+                nx.set_node_attributes(electricity_grid, {'D33': {'demand/production': electricity_grid.node['D33']['demand/production'] + items[4] + items[4] }})
+        if 'C5' in items[1]:
+                nx.set_node_attributes(electricity_grid, {'C4': {'demand/production': electricity_grid.node['C4']['demand/production'] + int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C5'].iloc[0][15]) }})
+        if 'C4' in items[1]:
+            if ('Hybrid' in items[2] or 'Electricity' in items[2]):
+                nx.set_node_attributes(electricity_grid, {'C4': {'demand/production': electricity_grid.node['C4']['demand/production'] + ((int(conversionAssets_elec[conversionAssets_elec.iloc[:,2] == 'C4'].iloc[0][15]) + items[4]) /(0.49*0.85)) }})
+        if 'C76' in items[1]:
+            nx.set_node_attributes(electricity_grid, {'TenneT380MV_trans': {'demand/production': electricity_grid.node['TenneT380MV_trans']['demand/production'] + (int(all_assets[all_assets.iloc[:,2] == 'C76'].iloc[0][15])/0.75) }}) 
+        if 'D34' in items[1]:
+            nx.set_node_attributes(electricity_grid, {'TenneT380MV_trans': {'demand/production': electricity_grid.node['TenneT380MV_trans']['demand/production'] + items[4] }})
+        if 'C79' in items[1]:
+            nx.set_node_attributes(electricity_grid, {'TenneT380Simonsh_trans': {'demand/production': electricity_grid.node['TenneT380Simonsh_trans']['demand/production'] + (int(all_assets[all_assets.iloc[:,2] == 'C79'].iloc[0][15])/0.75) }})
+        if 'D35' in items[1]:
+            nx.set_node_attributes(electricity_grid, {'TenneT380Simonsh_trans': {'demand/production': electricity_grid.node['TenneT380Simonsh_trans']['demand/production']  + items[4] }})
+        if ('C40' in items[1] and items[4] != 0):
+            nx.set_node_attributes(electricity_grid, {'C40': {'demand/production': electricity_grid.node['C40']['demand/production']  + ( items[4] * all_assets[all_assets.iloc[:,2] == 'C40'].iloc[0][16] * -1)  }})
+        if ('C66' in items[1] and items[4] != 0):
+            nx.set_node_attributes(electricity_grid, {'C66': {'demand/production': electricity_grid.node['C66']['demand/production']  + ( items[4] * all_assets[all_assets.iloc[:,2] == 'C66'].iloc[0][16] * -1)  }})
+        if ('C67' in items[1] and items[4] != 0):
+            nx.set_node_attributes(electricity_grid, {'C67': {'demand/production': electricity_grid.node['C67']['demand/production']  + ( items[4] * all_assets[all_assets.iloc[:,2] == 'C67'].iloc[0][16] * -1)  }})
+        if ('C68' in items[1] and items[4] != 0):
+            nx.set_node_attributes(electricity_grid, {'C68': {'demand/production': electricity_grid.node['C68']['demand/production']  + ( items[4] * all_assets[all_assets.iloc[:,2] == 'C68'].iloc[0][16] * -1)  }})
+        if ('C3' in items[1] and items[4] != 0):
+            nx.set_node_attributes(electricity_grid, {'C3': {'demand/production': electricity_grid.node['C3']['demand/production']  + ( items[4] * all_assets[all_assets.iloc[:,2] == 'C3'].iloc[0][16] * -1)  }})
+        if ('C6' in items[1] and items[4] != 0):
+            nx.set_node_attributes(electricity_grid, {'C6': {'demand/production': electricity_grid.node['C6']['demand/production']  + ( items[4] * all_assets[all_assets.iloc[:,2] == 'C6'].iloc[0][16] * -1)  }})
+        if ('C13' in items[1] and items[4] != 0):
+            nx.set_node_attributes(electricity_grid, {'C13': {'demand/production': ( items[4] * all_assets[all_assets.iloc[:,2] == 'C13'].iloc[0][16] * -1)  }})
+        if ('C60' in items[1] and items[4] != 0):
+            nx.set_node_attributes(electricity_grid, {'C60': {'demand/production': ( items[4] * all_assets[all_assets.iloc[:,2] == 'C60'].iloc[0][16] * -1)  }})
+        if ('C61' in items[1] and items[4] != 0):
+            nx.set_node_attributes(electricity_grid, {'C61': {'demand/production': ( items[4] * all_assets[all_assets.iloc[:,2] == 'C61'].iloc[0][16] * -1)  }})
+        if ('S2' in items[1] and items[4] != 0):
+            nx.set_node_attributes(electricity_grid, {'S2': {'demand/production': (items[4]*-1) }})
+        if ('S3' in items[1] and items[4] != 0):
+            nx.set_node_attributes(electricity_grid, {'S3': {'demand/production': (items[4]*-1)  }})
+        if ('S4' in items[1] and items[4] != 0):
+            nx.set_node_attributes(electricity_grid, {'S4': {'demand/production': (items[4]*-1) }}

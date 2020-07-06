@@ -1,0 +1,14 @@
+Natgassupply,Natgassupply
+Coalsupply,Coalsupply
+Refgassupply,Refgassupply
+Petcokessupply,Petcokessupply
+Resfuelsupply,Resfuelsupply
+Oilrestsupply,Oilrestsupply
+Wastesupply,Wastesupply
+S1,ImportH2_MV
+S2,OffshorewindlandingMV
+S3,OffshorewindlandingSimonsh
+S4,SupplyBritNedTenneT
+S5,SupplyelectricityrestNL
+D36,H2marketHinterland
+D37,Natgasdemandbuiltenvironment
